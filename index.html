@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Kalshi Paper Test</title>
+<style>
+:root{--bg:#0b0d10;--card:#13171d;--line:#232a33;--text:#e8ecf1;--dim:#8a94a3;--white:#fff;
+--pos:#3ddc84;--neg:#ff5c5c;--live:#ffb020;--accent:#5b9dff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 64px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+h1{font-size:22px;margin:0}
+h2{font-size:17px;margin:32px 0 10px}
+.dim{color:var(--dim);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px;background:#1b2129;border:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--pos);box-shadow:0 0 0 0 rgba(61,220,132,.6);animation:pulse 2s infinite}
+.dot.stale{background:var(--live);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,220,132,.5)}70%{box-shadow:0 0 0 8px rgba(61,220,132,0)}100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}}
+.hero{margin:18px 0 6px}
+.hero .label{color:var(--dim);font-size:14px}
+.hero .big{font-size:48px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--white)}
+.hero .sub{font-size:15px;color:var(--dim);font-variant-numeric:tabular-nums}
+.pos{color:var(--pos)!important}.neg{color:var(--neg)!important}.live{color:var(--live)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile .v{display:block;font-size:24px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.chartwrap{padding:12px 12px 6px;position:relative}
+.seg{display:inline-flex;background:#1b2129;border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{background:none;border:0;color:var(--dim);font:600 13px/1 inherit;padding:7px 12px;border-radius:6px;cursor:pointer}
+.seg button.on{background:#2a323d;color:var(--white)}
+svg text{fill:var(--dim);font-size:12px;font-family:inherit}
+.tip{position:absolute;pointer-events:none;background:#0f1318;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .1s;font-variant-numeric:tabular-nums}
+.wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;background:var(--card)}
+td,th{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+th{color:var(--dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+td.r,th.r{text-align:right}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:#1f252d;color:var(--dim)}
+.badge.LIVE{background:rgba(255,176,32,.15);color:var(--live)}
+.badge.WIN{background:rgba(61,220,132,.15);color:var(--pos)}
+.badge.LOSS{background:rgba(255,92,92,.15);color:var(--neg)}
+.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:16px}
+.empty{color:var(--dim);padding:16px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+@media(max-width:560px){.hero .big{font-size:40px}td,th{padding:8px 8px}body{font-size:16px}.hide-sm{display:none}}
+</style>
+</head><body><main>
+
+<div class="top">
+  <div>
+    <h1>Kalshi Paper Test</h1>
+    <div class="dim" id="rulesline">Loading…</div>
+  </div>
+  <span class="pill"><span class="dot" id="dot"></span><span id="fresh">connecting</span></span>
+</div>
+
+<div class="hero">
+  <div class="label">Paper P&amp;L, right now <span class="dim">(finished + what open bets could sell for)</span></div>
+  <div class="big" id="pnl">–</div>
+  <div class="sub" id="pnlsub">&nbsp;</div>
+</div>
+
+<div class="tiles">
+  <div class="tile"><span class="dim">Today</span><span class="v" id="t-today">–</span></div>
+  <div class="tile"><span class="dim">Record</span><span class="v" id="t-rec">–</span></div>
+  <div class="tile"><span class="dim">Return</span><span class="v" id="t-roi">–</span></div>
+  <div class="tile"><span class="dim">Beat closing price</span><span class="v" id="t-clv">–</span></div>
+  <div class="tile"><span class="dim">Open / live</span><span class="v" id="t-open">–</span></div>
+  <div class="tile"><span class="dim">Total trades</span><span class="v" id="t-n">–</span></div>
+</div>
+
+<h2 style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">P&amp;L over time
+  <span class="seg" id="range"><button data-r="1">Today</button><button data-r="7">7 days</button><button data-r="0" class="on">All</button></span></h2>
+<div class="card chartwrap"><svg id="chart" width="100%" height="240" role="img" aria-label="Paper profit and loss over time"></svg><div class="tip" id="tip"></div></div>
+
+<h2>Every trade</h2>
+<div class="filters"><span class="seg" id="tf"><button data-f="all" class="on">All</button><button data-f="open">Open</button><button data-f="done">Finished</button></span></div>
+<div id="trades"></div>
+
+<h2>Hold vs hedge</h2>
+<div class="dim" style="margin-bottom:8px" id="hedgeline"></div>
+<div class="tiles" style="margin-top:0" id="hedge"></div>
+
+<h2>Leaderboard: which rules work best</h2>
+<div class="dim" style="margin-bottom:8px" id="lbline"></div>
+<div class="note" id="lbmsg" style="margin-bottom:10px"></div>
+<div id="lb"></div>
+
+<h2>Closest calls, last scan</h2>
+<div class="dim" style="margin-bottom:8px" id="scanline"></div>
+<div id="near"></div>
+
+<p class="dim" style="margin-top:32px">Paper money only. No real bets are placed. A bet is logged when Kalshi's price plus fees is cheaper than Pinnacle's no-vig line by the edge shown at the top. "Beat closing price" = the price moved our way before the game started, the best sign of a real edge.</p>
+</main>
+
+<script>
+const GIST = "b578344323fb45f92678c21a23051655";
+const $ = id => document.getElementById(id);
+let D = null, fetchedAt = 0, range = 0, tradeFilter = "all";
+
+const money = v => (v >= 0 ? "+" : "−") + "$" + Math.abs(v).toFixed(2);
+const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+const cents = v => (v === "" || v == null) ? "–" : Math.round(parseFloat(v) * 100) + "¢";
+const et = (iso, opts) => new Date(iso).toLocaleString("en-US", Object.assign({timeZone: "America/New_York"}, opts || {weekday: "short", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit"}));
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+async function load() {
+  try {
+    let txt;
+    const r = await fetch("https://api.github.com/gists/" + GIST, {cache: "no-store"});
+    if (r.ok) {
+      const g = await r.json();
+      const f = g.files["data.json"];
+      txt = f.truncated ? await (await fetch(f.raw_url)).text() : f.content;
+    } else {  // rate-limited: fall back to the (slower-updating) raw copy
+      txt = await (await fetch(`https://gist.githubusercontent.com/capi789/${GIST}/raw/data.json?t=${Date.now()}`)).text();
+    }
+    D = JSON.parse(txt);
+    fetchedAt = Date.now();
+    render();
+  } catch (e) { $("fresh").textContent = "offline, retrying"; }
+}
+
+function liveValue(b) {  // value of one trade right now
+  if (b.result) return parseFloat(b.profit);
+  if (b.mark === "" || b.mark == null) return 0;
+  return parseInt(b.contracts) * parseFloat(b.mark) - parseFloat(b.cost);
+}
+
+function render() {
+  const R = D.rules, bets = D.bets;
+  const day = Math.min(R.test_days, Math.floor((Date.now() - new Date(R.test_start + "T00:00:00-04:00")) / 864e5) + 1);
+  $("rulesline").textContent = `Day ${day} of ${R.test_days} · $${R.stake.toFixed(2)} per trade · trades when Kalshi is ${Math.round(R.edge_min * 100)}+ pts cheaper than Pinnacle`;
+
+  const done = bets.filter(b => b.result), open = bets.filter(b => !b.result);
+  const realized = done.reduce((a, b) => a + parseFloat(b.profit), 0);
+  const unreal = open.reduce((a, b) => a + liveValue(b), 0);
+  const total = realized + unreal;
+  $("pnl").textContent = money(total); $("pnl").className = "big " + cls(total);
+  $("pnlsub").textContent = `${money(realized)} finished · ${money(unreal)} open`;
+
+  const eq = D.equity;
+  const todayStart = new Date(new Date().toLocaleDateString("en-US", {timeZone: "America/New_York"}) + " 00:00 EDT");
+  const base = [...eq].reverse().find(p => new Date(p[0]) < todayStart);
+  const today = total - (base ? base[1] : 0);
+  $("t-today").textContent = money(today); $("t-today").className = "v " + cls(today);
+  const wins = done.filter(b => b.result === "WIN").length;
+  $("t-rec").textContent = `${wins}-${done.length - wins}`;
+  const staked = done.reduce((a, b) => a + parseFloat(b.cost), 0);
+  const roi = staked ? realized / staked * 100 : 0;
+  $("t-roi").textContent = (roi >= 0 ? "+" : "") + roi.toFixed(1) + "%"; $("t-roi").className = "v " + cls(roi);
+  const clvs = bets.filter(b => b.clv !== "").map(b => parseFloat(b.clv));
+  $("t-clv").textContent = clvs.length ? Math.round(clvs.filter(c => c > 0).length / clvs.length * 100) + "%" : "–";
+  const nlive = open.filter(b => b.status === "LIVE").length;
+  $("t-open").innerHTML = `${open.length}<span class="live" style="font-size:16px"> / ${nlive} live</span>`;
+  $("t-n").textContent = bets.length;
+
+  drawChart();
+  renderTrades();
+
+  // hedge
+  const hp = done.reduce((a, b) => a + parseFloat(b.hedge_profit || b.profit), 0);
+  const hedged = done.filter(b => b.hedged_at);
+  $("hedgeline").textContent = `Same trades scored two ways. Hedge = sell once our side drops ${Math.round(R.hedge_drop * 100)}+ pts below what we paid.`;
+  $("hedge").innerHTML = [
+    ["Hold to the end", money(realized), cls(realized)], [`Hedge at −${Math.round(R.hedge_drop * 100)}`, money(hp), cls(hp)],
+    ["Hedges that saved a loser", hedged.filter(b => b.result === "LOSS").length, ""],
+    ["Hedges that sold a winner", hedged.filter(b => b.result === "WIN").length, ""]
+  ].map(([l, v, c]) => `<div class="tile"><span class="dim">${l}</span><span class="v ${c}">${v}</span></div>`).join("");
+
+  // leaderboard
+  const lb = D.leaderboard, cur = lb.find(r => r.current) || {};
+  const ready = lb.filter(r => !r.current && r.n >= R.promote_min && cur.n >= R.promote_min && r.profit > cur.profit && r.roi >= cur.roi + 2 && r.clv >= 0);
+  const maxN = Math.max(0, ...lb.map(r => r.n));
+  $("lbline").textContent = `${lb.length} versions paper-trading the same games. A version needs ${R.promote_min}+ finished trades and a clear lead before it is suggested.`;
+  $("lbmsg").innerHTML = ready.length ? `Suggest switching to <b>${esc(ready[0].name)}</b>. Ahead of the current rule after ${ready[0].n} finished trades. Needs Daniel's OK.`
+    : `Keep the current rule. No version has proven itself yet${maxN < R.promote_min ? ` (${R.promote_min - maxN} more finished trades needed)` : ""}.`;
+  $("lb").innerHTML = `<div class="wrap"><table><tr><th>#</th><th>Version</th><th class="r">Trades</th><th class="r">Record</th><th class="r">Profit</th><th class="r hide-sm">Return</th></tr>` +
+    lb.map((r, i) => `<tr><td>${i + 1}</td><td><b>${esc(r.name)}</b>${r.current ? ' <span class="pos" style="font-size:13px">← current</span>' : ""}</td><td class="r">${r.n}</td><td class="r">${r.wins}-${r.n - r.wins}</td><td class="r ${cls(r.profit)}">${money(r.profit)}</td><td class="r hide-sm">${r.roi >= 0 ? "+" : ""}${r.roi.toFixed(0)}%</td></tr>`).join("") + `</table></div>`;
+
+  // closest calls
+  const s = D.scan || {};
+  $("scanline").textContent = D.last_scan ? `Last scan ${et(D.last_scan)} ET · ${s.compared || 0} prices compared · ${s.matched || 0} games matched · ${D.credits ?? "?"} odds credits left this month` : "No scan yet.";
+  $("near").innerHTML = D.near.length ? `<div class="wrap"><table><tr><th>Pick</th><th class="r">Kalshi</th><th class="r">Sharp</th><th class="r">Edge</th></tr>` +
+    D.near.map(x => { const e = parseFloat(x.edge) * 100; return `<tr><td>${esc(x.pick)}<br><span class="dim">${esc(x.sport)} · ${et(x.start_utc)}</span></td><td class="r">${cents(x.ask)}</td><td class="r">${(parseFloat(x.fair) * 100).toFixed(1)}%</td><td class="r ${e >= R.edge_min * 100 ? "pos" : "dim"}">${e >= 0 ? "+" : ""}${e.toFixed(1)}</td></tr>`; }).join("") + `</table></div>`
+    : `<div class="empty">No scan yet.</div>`;
+  tick();
+}
+
+function renderTrades() {
+  let rows = [...D.bets].sort((a, b) => b.placed_at.localeCompare(a.placed_at));
+  if (tradeFilter === "open") rows = rows.filter(b => !b.result);
+  if (tradeFilter === "done") rows = rows.filter(b => b.result);
+  if (!rows.length) { $("trades").innerHTML = `<div class="empty">${D.bets.length ? "Nothing here." : "No trades yet. The scanner only trades when Kalshi is clearly cheaper than the sharp line, so no trade is a normal result."}</div>`; return; }
+  $("trades").innerHTML = `<div class="wrap"><table><tr><th>Placed</th><th>Trade</th><th class="r">Paid</th><th class="r">Now</th><th class="r">P&amp;L</th><th>Status</th></tr>` +
+    rows.map(b => {
+      const v = liveValue(b), st = b.result || b.status || "WAITING";
+      const now = b.result ? (b.result === "WIN" ? "100¢" : b.result === "LOSS" ? "0¢" : "–") : cents(b.mark);
+      const hedge = b.hedged_at ? `<br><span class="dim">hedge sold ${cents(b.hedge_price)}</span>` : "";
+      return `<tr><td class="dim">${et(b.placed_at, {month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit"})}</td>
+        <td><b>${esc(b.pick)}</b><br><span class="dim">${esc(b.sport)} · ${esc(b.game)} · ${et(b.start_utc)}</span></td>
+        <td class="r">${cents(b.price)}<br><span class="dim">${b.contracts}×</span></td><td class="r">${now}${hedge}</td>
+        <td class="r ${cls(v)}"><b>${money(v)}</b></td><td><span class="badge ${st}">${st}</span></td></tr>`;
+    }).join("") + `</table></div>`;
+}
+
+function drawChart() {
+  const svg = $("chart"), W = svg.clientWidth || 600, H = 240, pad = {l: 52, r: 14, t: 14, b: 26};
+  let pts = D.equity.map(p => [new Date(p[0]).getTime(), p[1]]);
+  if (range) { const cut = range === 1 ? new Date(new Date().toLocaleDateString("en-US", {timeZone: "America/New_York"}) + " 00:00 EDT").getTime() : Date.now() - range * 864e5; pts = pts.filter(p => p[0] >= cut); }
+  if (pts.length < 2) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Chart fills in as the tracker runs (every 2 minutes).</text>`; svg.onmousemove = null; return; }
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = Math.min(0, ...ys), y1 = Math.max(0, ...ys); if (y1 - y0 < 1) { y1 += .5; y0 -= .5; }
+  const X = t => pad.l + (t - x0) / (x1 - x0 || 1) * (W - pad.l - pad.r), Y = v => pad.t + (y1 - v) / (y1 - y0) * (H - pad.t - pad.b);
+  const last = ys[ys.length - 1], col = last >= 0 ? "var(--pos)" : "var(--neg)";
+  const path = pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1)).join("");
+  const ticks = [y0, 0, y1].filter((v, i, a) => a.indexOf(v) === i);
+  const span = x1 - x0, fmtX = t => new Date(t).toLocaleString("en-US", span > 2 * 864e5 ? {timeZone: "America/New_York", month: "numeric", day: "numeric"} : {timeZone: "America/New_York", hour: "numeric", minute: "2-digit"});
+  svg.innerHTML =
+    ticks.map(v => `<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v === 0 ? "#3a434f" : "#1d232b"}" stroke-width="1"/><text x="${pad.l - 8}" y="${Y(v) + 4}" text-anchor="end">${money(v)}</text>`).join("") +
+    `<path d="${path}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<text x="${pad.l}" y="${H - 6}">${fmtX(x0)}</text><text x="${W - pad.r}" y="${H - 6}" text-anchor="end">${fmtX(x1)}</text>` +
+    `<line id="cx" y1="${pad.t}" y2="${H - pad.b}" stroke="#56606d" stroke-width="1" visibility="hidden"/><circle id="cd" r="4.5" fill="${col}" stroke="var(--card)" stroke-width="2" visibility="hidden"/>`;
+  const tip = $("tip");
+  svg.onmousemove = ev => {
+    const rect = svg.getBoundingClientRect(), mx = ev.clientX - rect.left;
+    let best = 0; pts.forEach((p, i) => { if (Math.abs(X(p[0]) - mx) < Math.abs(X(pts[best][0]) - mx)) best = i; });
+    const p = pts[best], px = X(p[0]), py = Y(p[1]);
+    svg.querySelector("#cx").setAttribute("x1", px); svg.querySelector("#cx").setAttribute("x2", px); svg.querySelector("#cx").setAttribute("visibility", "visible");
+    const d = svg.querySelector("#cd"); d.setAttribute("cx", px); d.setAttribute("cy", py); d.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b class="${cls(p[1])}">${money(p[1])}</b> <span class="dim">${et(new Date(p[0]).toISOString())}</span>`;
+    tip.style.opacity = 1; tip.style.left = Math.min(px + 14, W - 190) + "px"; tip.style.top = Math.max(py - 36, 4) + "px";
+  };
+  svg.onmouseleave = () => { tip.style.opacity = 0; svg.querySelectorAll("#cx,#cd").forEach(n => n.setAttribute("visibility", "hidden")); };
+}
+
+function tick() {
+  if (!D) return;
+  const age = Math.round((Date.now() - new Date(D.published_at)) / 1000);
+  const txt = age < 60 ? `live · updated ${age}s ago` : age < 3600 ? `updated ${Math.floor(age / 60)}m ago` : `updated ${et(D.published_at)}`;
+  $("fresh").textContent = txt;
+  $("dot").className = "dot" + (age > 600 ? " stale" : "");
+}
+
+document.querySelectorAll("#range button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#range button").forEach(x => x.classList.remove("on")); b.classList.add("on");
+  range = parseInt(b.dataset.r); if (D) drawChart();
+});
+document.querySelectorAll("#tf button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tf button").forEach(x => x.classList.remove("on")); b.classList.add("on");
+  tradeFilter = b.dataset.f; if (D) renderTrades();
+});
+window.addEventListener("resize", () => D && drawChart());
+setInterval(tick, 1000);
+setInterval(load, 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+load();
+</script>
+</body></html>
