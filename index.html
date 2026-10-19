@@ -2,10 +2,22 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Kalshi Paper Test</title>
+<title>Strategy Race</title>
 <style>
 :root{--bg:#0b0d10;--card:#13171d;--line:#232a33;--text:#e8ecf1;--dim:#8a94a3;--white:#fff;
---pos:#3ddc84;--neg:#ff5c5c;--live:#ffb020;--accent:#5b9dff}
+--pos:#3ddc84;--neg:#ff5c5c;--live:#ffb020;--accent:#5b9dff;
+--s-god:#3987e5;--s-mm:#d95926;--s-house:#199e70}
+.race{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:6px}
+.racer{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative}
+.racer .who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+.racer .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.racer .venue{color:var(--dim);font-size:13px;margin-top:2px}
+.racer .amt{font-size:34px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;margin:8px 0 2px}
+.racer .stats{color:var(--dim);font-size:14px;font-variant-numeric:tabular-nums}
+.lead{position:absolute;top:12px;right:12px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(255,176,32,.15);color:var(--live)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim);margin:0 0 6px 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:17px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 main{max-width:1040px;margin:0 auto;padding:20px 16px 64px}
@@ -51,12 +63,30 @@ td.r,th.r{text-align:right}
 
 <div class="top">
   <div>
-    <h1>Kalshi Paper Test</h1>
+    <h1>Strategy Race · paper trading</h1>
     <div class="dim" id="rulesline">Loading…</div>
   </div>
   <span class="pill"><span class="dot" id="dot"></span><span id="fresh">connecting</span></span>
 </div>
 
+<h2 style="margin-top:22px">The race · $50 paper each</h2>
+<div class="race" id="race"></div>
+<div class="card chartwrap" style="margin-top:10px">
+  <div class="legend"><span><i style="background:var(--s-god)"></i>Friend · GOD MODE</span><span><i style="background:var(--s-mm)"></i>Daniel · market making</span><span><i style="background:var(--s-house)"></i>House · value scanner</span></div>
+  <svg id="racechart" width="100%" height="220" role="img" aria-label="Profit and loss of each strategy over time"></svg><div class="tip" id="tip2"></div>
+</div>
+
+<h2>Friend · GOD MODE parlays (Kalshi)</h2>
+<div class="dim" style="margin-bottom:8px">His rules, applied automatically: 80¢+ favorites that fill, only when the sharp line agrees, one leg per game, 2–4 legs, one parlay per sport per day plus a cross-sport and a high-accuracy parlay. Stake: quarter-Kelly, max 5%. Priced at the product of the legs (best case; Kalshi's real combo quotes are a bit worse).</div>
+<div id="godlist"></div>
+
+<h2>Daniel · market making (Polymarket US)</h2>
+<div class="dim" style="margin-bottom:8px">Quotes both sides at the best bid and offer, 5 contracts each, on up to 12 markets, every 10 seconds. Strict fills: back of the queue, filled only when trades go through our price. No maker rebate at our size (Polymarket US fees as of Oct 19).</div>
+<div id="mmquotes"></div>
+<h2 style="font-size:15px">Latest fills</h2>
+<div id="mmfills"></div>
+
+<h2>House · value scanner (Kalshi singles)</h2>
 <div class="hero">
   <div class="label">Paper P&amp;L, right now <span class="dim">(finished + what open bets could sell for)</span></div>
   <div class="big" id="pnl">–</div>
@@ -160,6 +190,7 @@ function render() {
 
   drawChart();
   renderTrades();
+  renderRace(total);
 
   // hedge
   const hp = done.reduce((a, b) => a + parseFloat(b.hedge_profit || b.profit), 0);
@@ -188,6 +219,68 @@ function render() {
     D.near.map(x => { const e = parseFloat(x.edge) * 100; return `<tr><td>${esc(x.pick)}<br><span class="dim">${esc(x.sport)} · ${et(x.start_utc)}</span></td><td class="r">${cents(x.ask)}</td><td class="r">${(parseFloat(x.fair) * 100).toFixed(1)}%</td><td class="r ${e >= R.edge_min * 100 ? "pos" : "dim"}">${e >= 0 ? "+" : ""}${e.toFixed(1)}</td></tr>`; }).join("") + `</table></div>`
     : `<div class="empty">No scan yet.</div>`;
   tick();
+}
+
+function renderRace(houseTotal) {
+  const R = D.race; if (!R) return;
+  const g = R.god, m = R.mm;
+  const racers = [
+    {k: "god", who: "Friend · GOD MODE", venue: "Kalshi parlays", v: g.total, stats: `${g.wins}-${g.losses} record · ${g.open} open parlays`},
+    {k: "mm", who: "Daniel · market making", venue: "Polymarket US", v: m.total, stats: `${m.fills} fills · quoting ${m.quoting} markets · holding ${m.holding}`},
+    {k: "house", who: "House · value scanner", venue: "Kalshi singles", v: houseTotal, stats: `${D.bets.filter(b => b.result).length} finished · ${D.bets.filter(b => !b.result).length} open`},
+  ];
+  const top = Math.max(...racers.map(r => r.v));
+  const anyMove = racers.some(r => Math.abs(r.v) > 0.004);
+  $("race").innerHTML = racers.map(r => `<div class="racer">${anyMove && r.v === top ? '<span class="lead">Leading</span>' : ""}
+    <div class="who"><span class="sw" style="background:var(--s-${r.k})"></span>${r.who}</div><div class="venue">${r.venue}</div>
+    <div class="amt ${cls(r.v)}">${money(r.v)}</div><div class="stats">${r.stats}</div></div>`).join("");
+
+  // race chart: one line per strategy, same axis
+  const svg = $("racechart"), W = svg.clientWidth || 600, H = 220, pad = {l: 52, r: 70, t: 12, b: 24};
+  const pts = D.equity.filter(p => p.length >= 5).map(p => [new Date(p[0]).getTime(), p[3], p[4], p[1]]);
+  if (pts.length < 2) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">Race chart fills in as the tracker runs (every 2 minutes).</text>`; }
+  else {
+    const x0 = pts[0][0], x1 = pts[pts.length - 1][0];
+    const all = pts.flatMap(p => [p[1], p[2], p[3]]);
+    let y0 = Math.min(0, ...all), y1 = Math.max(0, ...all); if (y1 - y0 < 1) { y1 += .5; y0 -= .5; }
+    const X = t => pad.l + (t - x0) / (x1 - x0 || 1) * (W - pad.l - pad.r), Y = v => pad.t + (y1 - v) / (y1 - y0) * (H - pad.t - pad.b);
+    const series = [["god", 1], ["mm", 2], ["house", 3]];
+    const fmtX = t => new Date(t).toLocaleString("en-US", (x1 - x0) > 2 * 864e5 ? {timeZone: "America/New_York", month: "numeric", day: "numeric"} : {timeZone: "America/New_York", hour: "numeric", minute: "2-digit"});
+    const ends = series.map(([k, i]) => ({k, y: Y(pts[pts.length - 1][i]), v: pts[pts.length - 1][i]})).sort((a, b) => a.y - b.y);
+    for (let j = 1; j < ends.length; j++) if (ends[j].y - ends[j - 1].y < 14) ends[j].y = ends[j - 1].y + 14;
+    svg.innerHTML = [y0, 0, y1].filter((v, i, a) => a.indexOf(v) === i).map(v => `<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v === 0 ? "#3a434f" : "#1d232b"}"/><text x="${pad.l - 8}" y="${Y(v) + 4}" text-anchor="end">${money(v)}</text>`).join("") +
+      series.map(([k, i]) => `<path d="${pts.map((p, n) => (n ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[i]).toFixed(1)).join("")}" fill="none" stroke="var(--s-${k})" stroke-width="2" stroke-linejoin="round"/>`).join("") +
+      ends.map(e => `<text x="${W - pad.r + 6}" y="${e.y + 4}" style="fill:var(--text)">${money(e.v)}</text>`).join("") +
+      `<text x="${pad.l}" y="${H - 6}">${fmtX(x0)}</text><text x="${W - pad.r}" y="${H - 6}" text-anchor="end">${fmtX(x1)}</text>` +
+      `<line id="rx" y1="${pad.t}" y2="${H - pad.b}" stroke="#56606d" visibility="hidden"/>`;
+    const tip = $("tip2");
+    svg.onmousemove = ev => {
+      const mx = ev.clientX - svg.getBoundingClientRect().left;
+      let b = 0; pts.forEach((p, n) => { if (Math.abs(X(p[0]) - mx) < Math.abs(X(pts[b][0]) - mx)) b = n; });
+      const p = pts[b], x = X(p[0]); const ln = svg.querySelector("#rx"); ln.setAttribute("x1", x); ln.setAttribute("x2", x); ln.setAttribute("visibility", "visible");
+      tip.innerHTML = `<span class="dim">${et(new Date(p[0]).toISOString())}</span><br>Friend <b>${money(p[1])}</b> · Daniel <b>${money(p[2])}</b> · House <b>${money(p[3])}</b>`;
+      tip.style.opacity = 1; tip.style.left = Math.min(x + 14, W - 300) + "px"; tip.style.top = "8px";
+    };
+    svg.onmouseleave = () => { tip.style.opacity = 0; svg.querySelector("#rx").setAttribute("visibility", "hidden"); };
+  }
+
+  // GOD MODE parlays
+  const gp = [...R.god_parlays].reverse();
+  $("godlist").innerHTML = gp.length ? `<div class="wrap"><table><tr><th>Placed</th><th>Parlay</th><th class="r">Price</th><th class="r">Cost</th><th class="r">P&amp;L</th><th>Status</th></tr>` +
+    gp.map(p => { const v = p.result ? parseFloat(p.profit) : (p.mark !== "" ? parseFloat(p.mark) - parseFloat(p.cost) : 0); const st = p.result || "OPEN";
+      return `<tr><td class="dim">${et(p.placed_at, {month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit"})}</td><td><b>${esc(p.kind)} · ${esc(p.sport)}</b> <span class="dim">(${p.n_legs} legs)</span>${p.legs.map(l => `<br><span class="dim">• ${esc(l.pick)} ${Math.round(l.ask * 100)}¢</span>`).join("")}</td>
+      <td class="r">${Math.round(p.price * 100)}¢<br><span class="dim">${p.contracts}×</span></td><td class="r">$${parseFloat(p.cost).toFixed(2)}</td><td class="r ${cls(v)}"><b>${money(v)}</b></td><td><span class="badge ${st}">${st}</span></td></tr>`; }).join("") + `</table></div>`
+    : `<div class="empty">No parlays yet. His rules need 80¢+ favorites that the sharp line agrees with. Tonight's board has none; they show up mostly on weekend college football and soccer.</div>`;
+
+  // market making
+  const q = R.mm_quotes;
+  $("mmquotes").innerHTML = q.length ? `<div class="wrap"><table><tr><th>Market</th><th class="r">Our bid</th><th class="r">Our offer</th><th class="r hide-sm">Ahead of us</th><th class="r">Holding</th></tr>` +
+    q.map(x => `<tr><td>${esc(x.market)}</td><td class="r">${x.bid != null ? (x.bid * 100).toFixed(1) + "¢" : '<span class="dim">–</span>'}</td><td class="r">${x.ask != null ? (x.ask * 100).toFixed(1) + "¢" : '<span class="dim">–</span>'}</td><td class="r hide-sm dim">${x.ahead_bid != null ? Math.round(x.ahead_bid) : "–"}</td><td class="r ${x.pos ? "live" : "dim"}">${x.pos || 0}</td></tr>`).join("") + `</table></div>`
+    : `<div class="empty">Starting up…</div>`;
+  const f = [...R.mm_fills].reverse().slice(0, 25);
+  $("mmfills").innerHTML = f.length ? `<div class="wrap"><table><tr><th>Time</th><th>Market</th><th>Side</th><th class="r">Price</th><th class="r">Qty</th><th class="r">Holding</th></tr>` +
+    f.map(x => `<tr><td class="dim">${et(x.at, {hour: "numeric", minute: "2-digit", second: "2-digit"})}</td><td>${esc(x.market)}</td><td>${esc(x.side)}</td><td class="r">${(parseFloat(x.price) * 100).toFixed(1)}¢</td><td class="r">${x.qty}</td><td class="r">${x.position}</td></tr>`).join("") + `</table></div>`
+    : `<div class="empty">No fills yet. With strict fill rules, quotes only fill when real trades go through our price.</div>`;
 }
 
 function renderTrades() {
