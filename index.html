@@ -35,7 +35,7 @@ header{position:sticky;top:0;z-index:30;background:rgba(11,15,26,.8);backdrop-fi
 .ddbtn .num{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font:700 12px/1 var(--mono);color:#0b0f1a}
 .ddbtn .chev{transition:transform .25s var(--ease)}
 .dd.open .chev{transform:rotate(180deg)}
-.menu{position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#121828;border:1px solid var(--line2);border-radius:14px;padding:6px;box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:opacity .18s,transform .18s var(--ease)}
+.menu{position:absolute;right:0;top:calc(100% + 8px);width:360px;max-height:70vh;overflow-y:auto;background:#121828;border:1px solid var(--line2);border-radius:14px;padding:6px;box-shadow:0 24px 60px rgba(0,0,0,.55);opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:opacity .18s,transform .18s var(--ease)}
 .dd.open .menu{opacity:1;transform:none;pointer-events:auto}
 .mgroup{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:10px 10px 6px}
 .mi{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:var(--text);text-align:left;padding:10px;border-radius:10px;cursor:pointer}
@@ -151,7 +151,8 @@ footer{color:var(--dim);font-size:13px;margin-top:40px;line-height:1.6}
 
 <script>
 const GIST = "b578344323fb45f92678c21a23051655";
-const COLORS = {mm: "#22d3ee", sureno: "#a78bfa", god: "#3b82f6", house: "#22c55e"};
+const PALETTE = ["#22d3ee", "#a78bfa", "#f59e0b", "#f472b6", "#34d399", "#60a5fa", "#fb7185", "#facc15", "#2dd4bf", "#c084fc", "#3b82f6", "#22c55e", "#fb923c", "#38bdf8", "#e879f9", "#a3e635"];
+const COLORS = new Proxy({}, {get: (_, id) => { const i = D ? D.strategies.findIndex(s => s.id === id) : 0; return PALETTE[Math.max(0, i) % PALETTE.length]; }});
 const PLAT = {polymarket: "Polymarket US", kalshi: "Kalshi"};
 const $ = id => document.getElementById(id);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -332,14 +333,7 @@ function list(s, animate) {
   L.querySelectorAll(".seg button").forEach(b => b.onclick = () => { pseg = b.dataset.s; list(s, true); });
   const qi = $("q"); if (qi) qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; list(s, false); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); };
 }
-function emptyText(s) {
-  return {
-    mm: "No fills yet. Quotes are live on up to 20 markets; they fill only when real trades go through our price.",
-    sureno: "No positions yet. It checks every 30 minutes for long shots to bet against.",
-    god: "No parlays yet. His rules need 80¢+ favorites the sharp line agrees with, which show up mostly on weekend college football and soccer.",
-    house: "No trades yet. It only bets when Kalshi is clearly cheaper than the sharp line, so a quiet day is normal.",
-  }[s.id];
-}
+function emptyText(s) { return s.empty || "No trades yet."; }
 
 addEventListener("resize", () => { if (D) pl(strat(sel), false); });
 setInterval(load, 60000);
