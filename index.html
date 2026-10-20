@@ -139,7 +139,7 @@ footer{color:var(--dim);font-size:13px;margin-top:40px;line-height:1.6}
 
 <header><div class="hw">
   <div class="brand"><svg width="24" height="20" viewBox="0 0 26 22" aria-hidden="true"><defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs><path d="M2 2l9 9-9 9M13 2l9 9-9 9" fill="none" stroke="url(#lg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Strategy <b>Race</b></div>
-  <nav class="tabs"><button class="tab" data-p="polymarket">Polymarket</button><button class="tab" data-p="kalshi">Kalshi</button></nav>
+  <nav class="tabs"><button class="tab" data-p="polymarket">Polymarket</button><button class="tab" data-p="kalshi">Kalshi</button><button class="tab" data-p="news">News</button></nav>
   <div class="dd" id="dd">
     <button class="ddbtn" id="ddbtn" aria-haspopup="true" aria-expanded="false"><span class="num" id="ddnum">–</span><span id="ddname">Loading…</span><svg class="chev" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
     <div class="menu" id="menu" role="menu"></div>
@@ -180,8 +180,8 @@ async function load() {
     const first = !D; const next = JSON.parse(txt);
     if (!next.strategies) return;
     D = next;
-    if (first) { let want = (location.hash || "").slice(1); if (!strat(want)) { try { want = localStorage.getItem("race-strat"); } catch (e) {} } sel = strat(want) ? want : "mm"; }
-    renderMenu(); render(first);
+    if (first) { let want = (location.hash || "").slice(1); newsMode = want === "news"; if (!strat(want)) { try { want = localStorage.getItem("race-strat"); } catch (e) {} } sel = strat(want) ? want : "mm"; }
+    renderMenu(); newsMode ? renderNews(first) : render(first);
     $("fresh").textContent = "Last update " + ago(D.published_at) + ".";
   } catch (e) { $("fresh").textContent = "Couldn't reach the data, retrying."; }
 }
@@ -189,7 +189,7 @@ async function load() {
 /* ---------- header: tabs + strategy dropdown ---------- */
 function renderMenu() {
   const s = strat(sel);
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.p === s.platform));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", newsMode ? t.dataset.p === "news" : t.dataset.p === s.platform));
   $("ddnum").textContent = s.num; $("ddnum").style.background = COLORS[s.id];
   $("ddname").textContent = `Strategy ${s.num} · ${s.name}`;
   const group = p => `<div class="mgroup">${PLAT[p]}</div>` + D.strategies.filter(x => x.platform === p).sort((a, b) => a.num - b.num).map(x =>
@@ -198,7 +198,7 @@ function renderMenu() {
   $("menu").querySelectorAll(".mi").forEach(b => b.onclick = () => { pick(b.dataset.id); closeMenu(); });
 }
 function pick(id) {
-  shown = 100;
+  shown = 100; newsMode = false;
   sel = id; history.replaceState(null, "", "#" + id);
   try { localStorage.setItem("race-strat", id); } catch (e) {}
   q = ""; renderMenu(); render(true);
@@ -209,9 +209,31 @@ document.addEventListener("click", e => { if (!$("dd").contains(e.target)) close
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
 document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
   if (!D) return;
-  if (strat(sel).platform === t.dataset.p) return;
+  if (t.dataset.p === "news") { newsMode = true; history.replaceState(null, "", "#news"); renderMenu(); renderNews(true); return; }
+  if (!newsMode && strat(sel).platform === t.dataset.p) return;
   const s = D.strategies.filter(x => x.platform === t.dataset.p).sort((a, b) => a.num - b.num)[0]; if (s) pick(s.id);
 });
+
+/* ---------- news (alerts only, no picks) ---------- */
+let newsMode = false, newsSport = "All";
+const NEWS_ICON = {NHL: "🏒", NFL: "🏈", Tennis: "🎾", NBA: "🏀"};
+function renderNews(animate) {
+  const N = D.news || {}, all = N.alerts || [];
+  const sports = ["All", ...new Set(all.map(a => a.sport))];
+  const rows = all.filter(a => newsSport === "All" || a.sport === newsSport)
+    .sort((a, b) => (b.level === "high") - (a.level === "high") || String(a.at).localeCompare(String(b.at)));
+  const v = $("view");
+  v.innerHTML = `<div class="box" style="padding:20px 22px;margin-bottom:16px"><h1 style="margin:0;font-size:26px">News alerts</h1>
+    <div class="meta" style="color:var(--muted);margin-top:4px">What can swing a game: tennis rating gaps, NHL goalies and cold teams, NFL injuries. Alerts only, no picks. Updated ${N.updated ? ago(N.updated) : "–"}.</div></div>
+    <div class="ctrl"><div class="seg">${sports.map(sp => `<button data-sp="${sp}" class="${sp === newsSport ? "on" : ""}">${sp === "All" ? "All" : (NEWS_ICON[sp] || "") + " " + sp} <span style="color:var(--dim)">${sp === "All" ? all.length : all.filter(a => a.sport === sp).length}</span></button>`).join("")}</div></div>` +
+    (rows.length ? rows.map((a, i) => `<div class="rowi" style="grid-template-columns:46px minmax(0,1fr) auto;${animate ? `animation-delay:${Math.min(i, 12) * 30}ms` : "animation:none"}">
+      <div class="ic" style="background:${a.level === "high" ? "linear-gradient(135deg,#f87171,#e6ecff 170%)" : "linear-gradient(135deg,#fbbf24,#e6ecff 170%)"};font-size:20px">${NEWS_ICON[a.sport] || "•"}</div>
+      <div class="mt"><div class="t">${esc(a.title)}</div><div class="s"><span class="chip ${a.level === "high" ? "no" : ""}">${esc(a.kind)}</span><span>${esc(a.detail)}</span></div></div>
+      <div class="r small" style="color:var(--dim);white-space:nowrap">${a.first_seen ? ago(a.first_seen) : ""}</div></div>`).join("")
+      : `<div class="empty">No alerts right now.</div>`);
+  if (animate) { v.classList.remove("swap"); void v.offsetWidth; v.classList.add("swap"); }
+  v.querySelectorAll(".seg button").forEach(b => b.onclick = () => { newsSport = b.dataset.sp; renderNews(false); });
+}
 
 /* ---------- main view ---------- */
 function render(animate) {
