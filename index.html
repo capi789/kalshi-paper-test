@@ -224,7 +224,7 @@ function render(animate) {
         <div><h1>Strategy ${s.num} · ${esc(s.name)}</h1><div class="meta">${esc(s.by)} · ${PLAT[s.platform]} · started ${new Date(s.started).toLocaleDateString("en-US", {month: "short", day: "numeric"})}</div></div></div>
       <div class="how">${esc(s.how)}</div>
       <div class="trio"><div><b>${money(s.positions_value)}</b><span>Positions value</span></div><div><b>${money(s.biggest_win)}</b><span>Biggest win</span></div><div><b>${s.markets}</b><span>Markets traded</span></div></div>
-      <div class="lines"><div>Total P&amp;L<b class="${cls(s.pnl)}">${signed(s.pnl)}</b></div><div>Started with → now<b>$1,000.00 → ${money(s.value)}</b></div>${s.pnl10 != null ? `<div>At $10 per parlay instead<b class="${cls(s.pnl10)}">${signed(s.pnl10)}</b></div>` : ""}<div>Record<b>${s.wins} won · ${s.losses} lost · ${s.active.length} open</b></div><div>Total volume<b>${money(s.volume)}</b></div></div>
+      <div class="lines"><div>Total P&amp;L<b class="${cls(s.pnl)}">${signed(s.pnl)}</b></div><div>Started with → now<b>$1,000.00 → ${money(s.value)}</b></div>${s.pnl10 != null ? `<div>At $1 per parlay (his size)<b class="${cls(s.pnl10)}">${signed(s.pnl10)}</b></div>` : ""}<div>Record<b>${s.wins} won · ${s.losses} lost · ${s.active.length} open</b></div><div>Total volume<b>${money(s.volume)}</b></div></div>
     </section>
     <section class="box pl">
       <div class="plhead"><div class="pllabel"><span class="tri" id="tri"></span>Profit/Loss</div>
