@@ -114,6 +114,8 @@ main{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
 .won{color:var(--green);font-weight:600}
 .lost{color:var(--red);font-weight:600}
 .pos{color:var(--green)}.neg{color:var(--red)}
+.more{display:block;width:100%;margin-top:6px;padding:14px;border-radius:14px;border:1px solid var(--line2);background:var(--panel);color:var(--text);font-weight:600;font-size:15px;cursor:pointer}
+.more:hover{border-color:rgba(34,211,238,.45)}
 .empty{padding:28px;text-align:center;color:var(--muted);background:var(--row);border-radius:14px}
 .ty{font-weight:600}
 footer{color:var(--dim);font-size:13px;margin-top:40px;line-height:1.6}
@@ -156,7 +158,7 @@ const COLORS = new Proxy({}, {get: (_, id) => { const i = D ? D.strategies.findI
 const PLAT = {polymarket: "Polymarket US", kalshi: "Kalshi"};
 const $ = id => document.getElementById(id);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let D = null, sel = null, period = 0, ptab = "positions", pseg = "active", q = "", prevBig = {};
+let D = null, sel = null, period = 0, ptab = "positions", pseg = "active", q = "", prevBig = {}, shown = 100;
 
 const fmt2 = v => Math.abs(v).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const money = v => { v = Math.round(v * 100) / 100; return (v < 0 ? "-" : "") + "$" + fmt2(v); };
@@ -196,6 +198,7 @@ function renderMenu() {
   $("menu").querySelectorAll(".mi").forEach(b => b.onclick = () => { pick(b.dataset.id); closeMenu(); });
 }
 function pick(id) {
+  shown = 100;
   sel = id; history.replaceState(null, "", "#" + id);
   try { localStorage.setItem("race-strat", id); } catch (e) {}
   q = ""; renderMenu(); render(true);
@@ -330,6 +333,10 @@ function list(s, animate) {
       : `<div class="empty">${emptyText(s)}</div>`;
   }
   L.innerHTML = controls + body;
+  const total = L.querySelectorAll(".rowi").length;
+  L.querySelectorAll(".rowi").forEach((r, i) => { if (i >= shown) r.remove(); });
+  if (total > shown) L.insertAdjacentHTML("beforeend", `<button class="more" id="more">Show more (${(total - shown).toLocaleString()} left)</button>`);
+  const mb = $("more"); if (mb) mb.onclick = () => { shown += 200; list(s, false); };
   L.querySelectorAll(".seg button").forEach(b => b.onclick = () => { pseg = b.dataset.s; list(s, true); });
   const qi = $("q"); if (qi) qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; list(s, false); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); };
 }
