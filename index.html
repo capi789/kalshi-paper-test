@@ -343,7 +343,7 @@ function list(s, animate) {
 function emptyText(s) { return s.empty || "No trades yet."; }
 
 addEventListener("resize", () => { if (D) pl(strat(sel), false); });
-setInterval(load, 60000);
+setInterval(load, 90000);  // GitHub allows 60 unauthenticated reads an hour per viewer
 setInterval(() => { if (D) $("fresh").textContent = "Last update " + ago(D.published_at) + "."; }, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 load();
